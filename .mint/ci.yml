@@ -49,6 +49,11 @@ tasks:
     background-processes:
       - key: databases
         run: docker compose up
-        ready-check: nc -z localhost 25432 && nc -z localhost 27687
+        ready-check: |
+          nc -z localhost 25432 # pg
+          # neo4j restarts the server after setting the new auth;
+          # wait for the UI to come up, which seems to happen only after the bounce.
+          nc -z localhost 27687 # neo4j bolt
+          nc -z localhost 27474 # neo4j ui
     run: |
       uv run pytest
