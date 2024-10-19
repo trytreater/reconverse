@@ -20,7 +20,7 @@ tasks:
       - .tool-versions
 
   - key: python
-    call: mint/install-python 1.1.1
+    call: mint/install-python 1.2.1
     with:
       python-version: ${{ tasks.versions.values.python }}
 
