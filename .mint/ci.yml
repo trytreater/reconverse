@@ -7,7 +7,7 @@ tasks:
   - key: code
     call: mint/git-clone 1.2.7
     with:
-      repository: https://github.com/trytreater/web
+      repository: https://github.com/trytreater/reconverse
       ref: ${{ init.commit-sha }}
       github-access-token: ${{ github.token }}
       lfs: false
