@@ -1,0 +1,32 @@
+version: "3.9"
+services:
+  postgres:
+    image: public.ecr.aws/docker/library/postgres:16
+    restart: unless-stopped
+    volumes:
+      - postgres16:/var/lib/postgresql/data
+    environment:
+      POSTGRES_PASSWORD: password
+    user: postgres
+    ports:
+      - 25432:5432
+  neo4j:
+    image: public.ecr.aws/docker/library/neo4j:5.24.2
+    container_name: neo4j
+    environment:
+      - NEO4J_AUTH=${NEO4J_USER}/${NEO4J_PASSWORD}
+    ports:
+      - 27474:7474  # Web UI
+      - 27687:7687  # Bolt protocol
+    volumes:
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+      - neo4j_import:/import
+      - neo4j_plugins:/plugins
+
+volumes:
+  postgres16:
+  neo4j_data:
+  neo4j_logs:
+  neo4j_import:
+  neo4j_plugins:
