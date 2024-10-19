@@ -1,0 +1,18 @@
+on:
+  github:
+    push:
+      if: ${{ event.git.branch != 'main' }}
+      init:
+        commit-sha: ${{ event.git.sha }}
+        branch: ${{ event.git.branch }}
+
+concurrency-pools:
+  - id: trytreater/web:branch-${{ init.branch }}
+    capacity: 1
+    on-overflow: cancel-running
+
+tasks:
+  - key: ci
+    call: ${{ run.mint-dir }}/ci.yml
+    init:
+      commit-sha: ${{ init.commit-sha }}

@@ -1,3 +1,7 @@
+# Reconverse
+
+Recall relevant information from previous conversations.
+
 ## Development setup
 
 Install [`uv`](https://github.com/astral-sh/uv) if it's not already installed:
