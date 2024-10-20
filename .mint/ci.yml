@@ -51,9 +51,8 @@ tasks:
         run: docker compose up
         ready-check: |
           nc -z localhost 25432 # pg
-          # neo4j restarts the server after setting the new auth;
-          # wait for the UI to come up, which seems to happen only after the bounce.
+
+          docker exec neo4j cypher-shell -u neo4j -p password "RETURN 1"
           nc -z localhost 27687 # neo4j bolt
-          nc -z localhost 27474 # neo4j ui
     run: |
       uv run pytest
