@@ -1,0 +1,58 @@
+tasks:
+  - key: apt
+    run: |
+      sudo apt-get update
+      sudo apt-get install -y netcat libpq-dev
+
+  - key: code
+    call: mint/git-clone 1.2.7
+    with:
+      repository: https://github.com/trytreater/reconverse
+      ref: ${{ init.commit-sha }}
+      github-access-token: ${{ github.token }}
+      lfs: false
+
+  - key: versions
+    use: code
+    run: |
+      grep python .tool-versions | awk '{print $2}' | tee $MINT_VALUES/python
+    filter:
+      - .tool-versions
+
+  - key: python
+    call: mint/install-python 1.2.1
+    with:
+      python-version: ${{ tasks.versions.values.python }}
+
+  - key: deps
+    use: [apt, code, python]
+    run: |
+      pip install uv
+      uv sync
+    filter:
+      - pyproject.toml
+      - uv.lock
+
+  - key: lint
+    use: deps
+    run: |
+      uv run ruff check
+
+  - key: format
+    use: deps
+    run: |
+      uv run ruff format --check
+
+  - key: test
+    use: deps
+    docker: true
+    background-processes:
+      - key: databases
+        run: docker compose up
+        ready-check: |
+          nc -z localhost 25432 # pg
+
+          docker exec neo4j cypher-shell -u neo4j -p password "RETURN 1"
+          nc -z localhost 27687 # neo4j bolt
+    run: |
+      uv run pytest

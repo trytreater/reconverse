@@ -1,0 +1,19 @@
+[project]
+name = "reconverse"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "neo4j>=5.25.0",
+    "psycopg2>=2.9.10",
+    "python-dotenv>=1.0.1",
+    "ruff>=0.7.0",
+    "sqlalchemy-utils>=0.41.2",
+    "sqlalchemy>=2.0.36",
+]
+
+[tool.uv]
+dev-dependencies = [
+    "pytest>=8.3.3",
+]
