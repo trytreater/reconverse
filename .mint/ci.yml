@@ -5,7 +5,7 @@ tasks:
       sudo apt-get install -y netcat libpq-dev
 
   - key: code
-    call: mint/git-clone 1.3.1
+    call: mint/git-clone 1.4.0
     with:
       repository: https://github.com/trytreater/reconverse
       ref: ${{ init.commit-sha }}
