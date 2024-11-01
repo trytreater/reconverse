@@ -14,7 +14,8 @@ dependencies = [
     "langchain==0.3.0",
     "langchain-community==0.3.0",
     "itext2kg==0.0.7",
-    "psycopg==3.2.3"
+    "psycopg==3.2.3",
+    "flask==3.0.3"
 ]
 
 [tool.uv]
