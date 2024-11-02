@@ -14,12 +14,17 @@ def configure_routes(server, api):
             return jsonify({"error": "JSON body required"}), 400
 
         raw_text = data.get("raw_text")
+        document_type = data.get("document_type")
         counterparty_id = data.get("counterparty_id")
         expects_response = data.get("expects_response", False)
 
         # Validate fields
         if not isinstance(raw_text, str):
             return jsonify({"error": "raw_text must be a string"}), 400
+        if not isinstance(document_type, str):
+            return jsonify({"error": "document_type must be a string"}), 400
+        if document_type not in server.accepted_document_types:
+            return jsonify({f"error": f"document_type {document_type} not accepted. \n Accepted document types: {server.accepted_document_types}"}), 400
         if not isinstance(counterparty_id, str):
             return jsonify({"error": "counterparty_id must be a string"}), 400
         if not isinstance(expects_response, bool):

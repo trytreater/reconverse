@@ -1,5 +1,5 @@
 from flask import Flask
-from .routes import configure_routes
+from reconverse.server.routes import configure_routes
 
 class APIConfig:
     """Base configuration with defaults."""

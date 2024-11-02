@@ -1,8 +1,4 @@
-import os
 import psycopg
-
-# Database URL from environment variables or a fallback for local development
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@localhost/dbname")
 
 def get_knowledge_graph_id_from_cp_id(counterparty_id):
     """

@@ -1,21 +1,27 @@
+from . import config
+from flask import Flask
+from reconverse.server.routes import configure_routes
 import logging
 from xml.dom import NotFoundErr
 
-from . import rdb
-from .models import Neo4jClient
+from reconverse.models import Neo4jClient, rdb
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 import os
-
-
+from reconverse.services.itext2kg.interface import iText2KGInterface
 
 class Reconverse:
+
+    accepted_media = ["email"]
+
     def __init__(self, env: str):
         self.env = env
 
         self._instantiate_logger()
         self._instantiate_neo4j_client()
         self._set_llm()
-        self._set_embedding_model()
+        self._set_embeddings_model()
+        self._instantiate_itext2kg_interface()
+        self._create_and_deploy_api()
 
     def _instantiate_logger(self) -> None:
         logger = logging.getLogger(__name__)
@@ -40,21 +46,46 @@ class Reconverse:
             max_tokens=None,
             timeout=None,
             max_retries=2,
-        )
+                )
 
-    def _set_embedding_model(self) -> None:
+    def _set_embeddings_model(self) -> None:
         model_name = os.getenv("EMBEDDING_MODEL", "OPENAI")
-        self.embedding_model = None
+        self.embeddings_model = None
 
         match model_name:
             case "OPENAI":
-                self.embedding_model = OpenAIEmbeddings(
+                self.embeddings_model = OpenAIEmbeddings(
             api_key = os.getenv("OPENAI_API_KEY") ,
             model="text-embedding-3-large",
-)
+                )
+
+    def _instantiate_itext2kg_interface(self) -> None:
+        self.itext2g_interface = iText2KGInterface(self)
 
 
-    def get_knowledge_graph_id(self, counterparty_id):
+    def _create_api(self) -> None:
+        self.api = Flask(__name__)
+        match self.env:
+            case 'development':
+                self.api.config.from_object(config.APIDevelopmentConfig)
+            case 'testing':
+                self.api.config.from_object(config.APITestingConfig)
+            case _:
+                raise Exception(f"Invalid environment: {self.env}")
+
+        configure_routes(self, self.api)
+
+    def _create_and_deploy_api(self) -> None:
+        self._create_api()
+
+        if self.env == "development" or self.env == "testing":
+            debug = True
+        else:
+            debug = False
+
+        self.api.run(host='127.0.0.1', port=5000, debug=debug)
+
+    def _get_knowledge_graph_id(self, counterparty_id):
         try:
             kg_id = rdb.get_knowledge_graph_id_from_cp_id(counterparty_id)
             self.logger.info(f"Successfully retrieved KG ID {kg_id} that maps to counterparty ID {counterparty_id}")
@@ -75,9 +106,14 @@ class Reconverse:
             raise e
 
     #
-    def internalize(self, raw_text, counterparty_id, expects_response):
+    def internalize(self, raw_text, document_type, counterparty_id, expects_response):
 
-        kg_id = self.get_knowledge_graph_id(counterparty_id)
+        kg_id = self._get_knowledge_graph_id(counterparty_id)
 
+        semantic_blocks = self.itext2g_interface.build_semantic_blocks(raw_text=raw_text, document_type=document_type)
+
+        kg = self.itext2g_interface.build_knowledge_graph(semantic_blocks=semantic_blocks)
+
+        ## Add Graph Integrator logic here
 
 

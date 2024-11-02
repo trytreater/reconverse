@@ -2,12 +2,12 @@ import pytest
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy_utils import database_exists, create_database
 from reconverse.graph.knowledge_graph import KnowledgeGraphManager
-from reconverse.models.base import Base, get_engine
+from reconverse.models.legacy.base import Base, get_engine
 from dotenv import load_dotenv
 
 
 def pytest_configure(config):
-    load_dotenv(".env.test")
+    load_dotenv(".env.development.test")
 
 
 @pytest.fixture(scope="session")
