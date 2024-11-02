@@ -9,5 +9,4 @@ def main(env: str):
 
     server = Reconverse(env)
 
-    server.logger.info("Successfully booted up Reconverse.")
 

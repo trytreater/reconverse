@@ -31,7 +31,7 @@ def configure_routes(server, api):
             return jsonify({"error": "expects_response must be a boolean"}), 400
 
         # Forward the data to the service layer for processing
-        context = server.internalize(raw_text, counterparty_id, expects_response)
+        context = server.internalize(raw_text, document_type, counterparty_id, expects_response)
 
         context = "placeholder"
 

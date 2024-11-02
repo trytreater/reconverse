@@ -1,9 +1,13 @@
 import psycopg
 
-def get_knowledge_graph_id_from_cp_id(counterparty_id):
+def get_gdb_name_from_cp_id(counterparty_id) -> tuple[str, str]:
     """
-    Retrieves the knowledge graph ID associated with a given counterparty ID.
+    Retrieves the name of the graph database associated with a given counterparty ID.
     """
+
+    # Futureproof
+    gdb_provider = "neo4j"
+
     try:
         # Connect to the database
         with psycopg.connect(DATABASE_URL) as conn:
@@ -16,10 +20,11 @@ def get_knowledge_graph_id_from_cp_id(counterparty_id):
                 result = cursor.fetchone()
 
                 # Extract kg_id if found, else return a placeholder
-                kg_id = result[0] if result else "dummy_kg_id"
+                gdb_name = result[0] if result else "dummy_kg_id"
 
     except Exception as e:
-        print(f"Error fetching kg_id for counterparty_id {counterparty_id}: {e}")
-        kg_id = "dummy_kg_id"  # Fallback value in case of error
+        # print(f"Error fetching kg_id for counterparty_id {counterparty_id}: {e}")
+        gdb_name = "neo4j"  # Default name in Neo4j Community Version
+        gdb_provider = "neo4j"
 
-    return kg_id
+    return gdb_name, gdb_provider
