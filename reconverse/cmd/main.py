@@ -7,6 +7,6 @@ def main(env: str):
     print("Environment:", env)
     load_dotenv(f".env.{env}")
 
-    server = Reconverse(env)
+    _ = Reconverse(env)
 
 

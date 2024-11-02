@@ -1,4 +1,3 @@
-from typing import Tuple, Any
 
 from neo4j import Session
 from . import config

@@ -6,7 +6,6 @@ from.custom_schemas import Email
 from typing import List
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 import os
-from itext2kg.graph_integration import GraphIntegrator
 
 
 class iText2KGInterface:

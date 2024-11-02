@@ -24,7 +24,7 @@ def configure_routes(server, api):
         if not isinstance(document_type, str):
             return jsonify({"error": "document_type must be a string"}), 400
         if document_type not in server.accepted_document_types:
-            return jsonify({f"error": f"document_type {document_type} not accepted. \n Accepted document types: {server.accepted_document_types}"}), 400
+            return jsonify({"error": f"document_type {document_type} not accepted. \n Accepted document types: {server.accepted_document_types}"}), 400
         if not isinstance(counterparty_id, str):
             return jsonify({"error": "counterparty_id must be a string"}), 400
         if not isinstance(expects_response, bool):
