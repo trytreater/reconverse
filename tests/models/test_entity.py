@@ -1,5 +1,5 @@
 import json
-from reconverse.models.entity import Entity
+from reconverse.models.legacy.entity import Entity
 
 
 def test_create_entity(db_session):
