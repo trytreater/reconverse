@@ -103,7 +103,7 @@ class Reconverse:
     def _visualize_kg(self, gdb_provider, kg):
         match gdb_provider:
             case "neo4j":
-                self.itext2g_interface.visualize_knowledge_graph(kg=kg)
+                self.neo4j_client.visualize_graph(kg=kg)
             case _:
                 raise Exception(f"Unknown provider: {gdb_provider}")
 
@@ -111,15 +111,26 @@ class Reconverse:
     def internalize(self, raw_text, document_type, counterparty_id, expects_response):
 
         # Execute iText2KG pipeline
-        self.logger.info("Reconverse: building semantic blocks...")
-        semantic_blocks = self.itext2g_interface.build_semantic_blocks(raw_text=raw_text, document_type=document_type)
-        self.logger.info("Reconverse: building knowledge graph...")
-        kg = self.itext2g_interface.build_knowledge_graph(semantic_blocks=semantic_blocks)
-
         with self._connect_to_cp_gdb(counterparty_id) as session:
+            self.logger.info("Reconverse: building semantic blocks...")
+            semantic_blocks = self.itext2g_interface.build_semantic_blocks(raw_text=raw_text, document_type=document_type)
+
+            # Retrieve existing kg
+            self.logger.info("Reconverse: loading kg into memory...")
+            kg = self.neo4j_client.load_kg_into_memory(session)
+
+            self.logger.info("Reconverse: building knowledge graph...")
+            if kg: # Build on existing kg
+                self.logger.info("Reconverse: A KG already exists! Incrementing it...")
+                kg = self.itext2g_interface.build_knowledge_graph(semantic_blocks=semantic_blocks, existing_kg=kg,
+                                                                  ent_threshold=0.7, rel_threshold=0.7)
+            else:
+                kg = self.itext2g_interface.build_knowledge_graph(semantic_blocks=semantic_blocks,
+                                                                  ent_threshold=0.7, rel_threshold=0.7)
+
             ## Visualize graph
             self.logger.info("Reconverse: visualizing graph...")
-            self.neo4j_client.visualize_graph(kg=kg, session=session)
+            self.neo4j_client.visualize_graph(kg=kg, session=session) # misnomer: this actually deletes the existing graph and creates a new one based on the in-memory Python representation
 
     def shutdown(self):
         self.neo4j_client.close()

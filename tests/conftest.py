@@ -1,8 +1,4 @@
 import pytest
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy_utils import database_exists, create_database
-from reconverse.graph.knowledge_graph import KnowledgeGraphManager
-from reconverse.models.legacy.base import Base, get_engine
 from dotenv import load_dotenv
 
 

@@ -1,6 +1,6 @@
 from neo4j import GraphDatabase, Driver, Session
 import os
-from itext2kg.models import KnowledgeGraph
+from itext2kg.models import KnowledgeGraph, Entity, EntityProperties, Relationship, RelationshipProperties
 import numpy as np
 from typing import List, Optional
 
@@ -14,6 +14,70 @@ class Neo4jClient:
         self.password = os.getenv("NEO4J_PASSWORD", "password")
 
         self.driver = self.connect()
+
+    @staticmethod
+    def load_kg_into_memory(session) -> Optional[KnowledgeGraph]:
+
+        def convert_embedding_from_str_to_np_arr(embedding_str: str) -> np.ndarray:
+            # Split the string by comma and convert each piece to a float
+            array = np.array(embedding_str.split(','), dtype=np.float32)
+            return array
+
+        kg = KnowledgeGraph()
+
+        # nodes_result = session.run("MATCH (n) RETURN n")
+        # for record in nodes_result:
+        #     labels = record["labels(n)"]
+        #     name = record["n.name"]
+        #     entity = Entity(label=labels[0] if labels else "", name=name)
+        #     kg.entities.append(entity)
+
+        node_id_map = {}
+
+        nodes_query_result = session.run("MATCH (n) RETURN n")
+        for record in nodes_query_result:
+            neo4j_node_obj = record["n"]
+            embeddings = convert_embedding_from_str_to_np_arr(neo4j_node_obj._properties.get("embeddings"))
+            # print(node.id, node.element_id, node.labels, node._properties.get("name"), node._properties.get("embeddings")[:10])
+            entity = Entity(
+                label=list(neo4j_node_obj.labels)[0] if neo4j_node_obj.labels else "",
+                name=neo4j_node_obj._properties.get("name"), # iText2KG Entity model is not perfectly symmetrical with Neo4j node...
+                properties=EntityProperties(
+                    embeddings=embeddings
+                )
+            )
+
+            node_id_map[neo4j_node_obj.id] = entity
+
+            kg.entities.append(entity)
+
+        relationships_query_results = session.run("""
+            MATCH (start)-[r]->(end)
+            RETURN id(start) AS start_id, id(end) as end_id, r as r
+            """)
+        for record in relationships_query_results:
+            start = node_id_map[record["start_id"]]
+            end = node_id_map[record["end_id"]]
+            neo4j_relationship_obj = record["r"]
+
+
+            embeddings = convert_embedding_from_str_to_np_arr(neo4j_relationship_obj._properties.get("embeddings"))
+
+            relationship = Relationship(
+                startEntity=start,
+                endEntity=end,
+                name=neo4j_relationship_obj.type,
+                properties=RelationshipProperties(
+                    embeddings=embeddings
+                )
+            )
+            kg.relationships.append(relationship)
+
+
+        if kg.entities or kg.relationships:
+            return kg
+        else:
+            return None
 
     def connect(self) -> Driver:
         return GraphDatabase.driver(self.uri, auth=(self.username, self.password))
@@ -111,6 +175,9 @@ class Neo4jClient:
         Args:
         kg (KnowledgeGraph): The KnowledgeGraph object containing the graph structure.
         """
+
+        session.run("MATCH (n) DETACH DELETE n")
+
         nodes, relationships = (
             self.create_nodes(kg=kg),
             self.create_relationships(kg=kg),

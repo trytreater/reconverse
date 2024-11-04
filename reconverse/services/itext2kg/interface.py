@@ -1,8 +1,8 @@
 from xml.dom import NotFoundErr
 from itext2kg.documents_distiller import DocumentsDistiller
 from itext2kg import iText2KG
-from .ie_queries import email_query
-from.custom_schemas import Email
+from .ie_queries import *
+from .custom_schemas import Memo, EmailInteraction
 from typing import List
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 import os
@@ -10,7 +10,8 @@ import os
 
 class iText2KGInterface:
     accepted_document_types = {
-        "email": (Email, email_query),
+        "email": (EmailInteraction, email_query),
+        "memo": (Memo, memo_query),
     }
 
     def __init__(self, server):
@@ -27,12 +28,12 @@ class iText2KGInterface:
         match model_name:
             case "OPENAI":
                 self.llm = ChatOpenAI(
-            api_key=os.getenv("OPENAI_API_KEY"),
-            model="gpt-4o",
-            temperature=0,
-            max_tokens=None,
-            timeout=None,
-            max_retries=2,
+                    api_key=os.getenv("OPENAI_API_KEY"),
+                    model="gpt-4o",
+                    temperature=0,
+                    max_tokens=None,
+                    timeout=None,
+                    max_retries=2,
                 )
 
     def _set_embeddings_model(self) -> None:
@@ -42,8 +43,8 @@ class iText2KGInterface:
         match model_name:
             case "OPENAI":
                 self.embeddings_model = OpenAIEmbeddings(
-            api_key = os.getenv("OPENAI_API_KEY") ,
-            model="text-embedding-3-large",
+                    api_key=os.getenv("OPENAI_API_KEY"),
+                    model="text-embedding-3-large",
                 )
 
     def _instantiate_document_distiller(self) -> None:
@@ -62,18 +63,37 @@ class iText2KGInterface:
             raise NotFoundErr
         else:
             schema = self.accepted_document_types[document_type][0]
-            query  = self.accepted_document_types[document_type][1]
+            query = self.accepted_document_types[document_type][1]
             distilled_document = self.document_distiller.distill(
                 documents=[raw_text],
                 IE_query=query,
                 output_data_structure=schema)
 
+            self.server.logger.debug(distilled_document)
+
             semantic_blocks = [f"{key} - {value}".replace("{", "[").replace("}", "]")
-                               for key, value in distilled_document.items() if value !=[] and value != ""  and value is not None]
+                               for key, value in distilled_document.items() if
+                               value != [] and value != "" and value is not None]
 
         return semantic_blocks
 
-    def build_knowledge_graph(self, semantic_blocks, ent_threshold=0.6, rel_threshold=0.6): #todo add typing
-        return self.itext2kg.build_graph(sections=[semantic_blocks],
-                                         ent_threshold=ent_threshold,
-                                         rel_threshold=rel_threshold)
+    def build_knowledge_graph(self, semantic_blocks, existing_kg=None, ent_threshold=0.6,
+                              rel_threshold=0.6):  #todo add typing
+        if existing_kg is None:
+            kg = self.itext2kg.build_graph(sections=[semantic_blocks],
+                                           ent_threshold=ent_threshold,
+                                           rel_threshold=rel_threshold)
+        else:
+            kg = self.itext2kg.build_graph(sections=[semantic_blocks],
+                                           existing_knowledge_graph=existing_kg,
+                                           ent_threshold=ent_threshold,
+                                           rel_threshold=rel_threshold)
+
+        # Experimental feature to remove reflexive relationships
+        pruned_relationships = []
+        for relationship in kg.relationships:
+            if relationship.startEntity != relationship.endEntity:
+                pruned_relationships.append(relationship)
+        kg.relationships = pruned_relationships
+
+        return kg

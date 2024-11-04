@@ -6,6 +6,20 @@ def configure_routes(server, api):
     def home():
         return "Welcome to Reconverse."
 
+    # Debug route for testing loading kg int memory
+    @api.route('/retrieve')
+    def retrieve_kg():
+        with server.neo4j_client.create_session("neo4j") as session:
+            kg = server.neo4j_client.load_kg_into_memory(session)
+            # for node in kg.entities:
+            #     print(node.name)
+
+            for edge in kg.relationships:
+                print(edge.startEntity.name, edge.name, edge.endEntity.name)
+
+        response = {"Timestamp: ": datetime.now().isoformat()}
+        return jsonify(response), 200
+
     @api.route('/internalize', methods=['POST'])
     def internalize():
         # Extract and validate JSON request data
